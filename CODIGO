@@ -1,0 +1,95 @@
+import customtkinter as ctk
+import json
+import os
+import random
+
+ctk.set_appearance_mode("white")
+ctk.set_default_color_theme("dark-blue")
+
+ARQUIVO = "conhecimento.json"
+if os.path.exists(ARQUIVO):
+    with open(ARQUIVO, "r", encoding="utf-8") as f:
+        conhecimento = json.load(f)
+else:
+    conhecimento = {}
+
+def salvar():
+    with open(ARQUIVO, "w", encoding="utf-8") as f:
+        json.dump(conhecimento, f, ensure_ascii=False, indent=4)
+
+
+janela = ctk.CTk()
+janela.title("FURIA")
+janela.geometry("700x600")
+janela.iconbitmap(r"C:\Users\Manoel\PycharmProjects\PythonProject\86328-Furia-Gaming.ico")
+
+chatbox = ctk.CTkTextbox(janela, width=460, height=400, corner_radius=10, font=("Arial", 16))
+chatbox.tag_config("bot", foreground="#111111")
+chatbox.pack(pady=20)
+chatbox.see("end")
+
+entrada = ctk.CTkEntry(janela, width=380)
+entrada.pack(side="left", padx=10, pady=10)
+
+
+pergunta_pendente = ""
+
+
+def enviar():
+    global pergunta_pendente
+    chatbox.delete("1.0", "end")
+    pergunta = entrada.get().strip().lower()
+    if not pergunta:
+        return
+
+    chatbox.insert("end", f"Você: {pergunta}\n")
+
+    if pergunta in ["sair", "tchau"]:
+        chatbox.insert("end", "FURIA: Até logo!\n","bot")
+        entrada.delete(0, "end")
+        return
+
+    if pergunta in conhecimento:
+        respostas = conhecimento[pergunta]
+        if isinstance(respostas, list):
+            resposta = random.choice(respostas)
+        else:
+            resposta = respostas
+        chatbox.insert("end", f"FURIA: {resposta}\n","bot")
+    else:
+        chatbox.insert("end", "FURIA: Não sei responder isso 😢\n","bot")
+        chatbox.insert("end", "FURIA: Como eu deveria responder?\n","bot")
+        chatbox.insert("end", "(Digite a resposta abaixo e clique em 'Ensinar')\n")
+
+        pergunta_pendente = pergunta
+        ensinar_button.configure(state="normal")
+        enviar_button.configure(state="disabled")
+
+    chatbox.see("end")
+    entrada.delete(0, "end")
+
+def ensinar():
+    global pergunta_pendente
+    resposta = entrada.get().strip()
+    if resposta:
+        if pergunta_pendente in conhecimento:
+
+            if isinstance(conhecimento[pergunta_pendente], list):
+                conhecimento[pergunta_pendente].append(resposta)
+            else:
+                conhecimento[pergunta_pendente] = [conhecimento[pergunta_pendente], resposta]
+        else:
+            conhecimento[pergunta_pendente] = [resposta]
+        salvar()
+        chatbox.insert("end", "FURIA: Aprendi mais uma resposta! 😊\n","bot")
+    entrada.delete(0, "end")
+    enviar_button.configure(state="normal")
+    ensinar_button.configure(state="disabled")
+
+enviar_button = ctk.CTkButton(janela, text="Enviar", command=enviar,fg_color='black')
+enviar_button.pack(side="left", padx=5)
+
+ensinar_button = ctk.CTkButton(janela, text="Ensinar", command=ensinar, state="disabled",fg_color='black')
+ensinar_button.pack(side="left", padx=5)
+
+janela.mainloop()
